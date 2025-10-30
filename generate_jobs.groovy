@@ -2,7 +2,8 @@ import groovy.json.JsonSlurper
 
 def jsonSlurper = new JsonSlurper()
 
-def orgs = ["org1", "org2", "org3"]
+//def orgs = ["org1", "org2", "org3"]
+def orgs = ["org1"]
 
 orgs.each { orgName ->
   folder(orgName) {
