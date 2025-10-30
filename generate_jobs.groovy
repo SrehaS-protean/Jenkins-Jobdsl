@@ -4,40 +4,40 @@ def jsonSlurper = new JsonSlurper()
 def orgsFile = new File('orgs.json')
 def orgs = jsonSlurper.parse(orgsFile)
 
+def orgs = ["org1", "org2", "org3"]
+
 orgs.each { orgName ->
-    folder(orgName) {
-        displayName(orgName)
-        description("Folder for ${orgName} repositories")
-    }
+  folder(orgName) {
+    displayName(orgName)
+    description("Folder for " + orgName + " repositories")
+  }
 
-    def reposFile = new File("${orgName}_repos.json")
-    def repos = jsonSlurper.parse(reposFile)
+  def repoFile = new File("${orgName}.json")
+  def repoList = new groovy.json.JsonSlurper().parse(repoFile)
 
-    repos.each { fullRepo ->
-        def repoName = fullRepo.split('/')[1]
-
-        multibranchPipelineJob("${orgName}/${repoName}") {
-            branchSources {
-                branchSource {
-                    source {
-                        git {
-                            id("${orgName}-${repoName}")
-                            remote("https://github.com/${fullRepo}.git")
-                            credentialsId('github-token') // Replace with your actual credentials ID
-                        }
-                    }
-                }
+  repoList.each { repoName ->
+    multibranchPipelineJob("${orgName}/${repoName}") {
+      branchSources {
+        branchSource {
+          source {
+            git {
+              id("${orgName}-${repoName}")
+              remote("https://github.com/${orgName}/${repoName}.git")
+              credentialsId('github-token')
             }
-            factory {
-                workflowBranchProjectFactory {
-                    scriptPath('Jenkinsfile')
-                }
-            }
-            orphanedItemStrategy {
-                discardOldItems {
-                    numToKeep(20)
-                }
-            }
+          }
         }
+      }
+      factory {
+        workflowBranchProjectFactory {
+          scriptPath('Jenkinsfile')
+        }
+      }
+      orphanedItemStrategy {
+        discardOldItems {
+          numToKeep(20)
+        }
+      }
     }
+  }
 }
