@@ -1,8 +1,6 @@
 import groovy.json.JsonSlurper
 
 def jsonSlurper = new JsonSlurper()
-def orgsFile = new File('orgs.json')
-def orgs = jsonSlurper.parse(orgsFile)
 
 def orgs = ["org1", "org2", "org3"]
 
