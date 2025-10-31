@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout DSL Repo') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/your-org/jenkins-dsl-configs.git']]])
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/SrehaS-protean/Jenkins-Jobdsl.git']]])
             }
         }
 
