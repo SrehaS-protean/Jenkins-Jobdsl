@@ -1,10 +1,9 @@
-import groovy.json.JsonSlurper
 
-def jsonSlurper = new JsonSlurper()
+import com.utils.DSLUtils
 
 // Load global config
 def configText = readFileFromWorkspace('config.json')
-def config = jsonSlurper.parseText(configText)
+def config = DSLUtils.createRepoBranchMap(configText)
 
 def orgs = ["org1", "org2", "org3"]
 
@@ -20,13 +19,13 @@ orgs.each { orgName ->
     try {
         repoJsonText = readFileFromWorkspace(jsonFileName)
     } catch (Exception e) {
-        println "[WARN] JSON file '${jsonFileName}' not found in workspace. Skipping ${orgName}..."
+        println "[WARN] JSON file '${jsonFileName}' not found. Skipping ${orgName}..."
         return
     }
 
     def repoBranchMap
     try {
-        repoBranchMap = jsonSlurper.parseText(repoJsonText)
+        repoBranchMap = DSLUtils.createRepoBranchMap(repoJsonText)
     } catch (Exception e) {
         println "[ERROR] Failed to parse '${jsonFileName}': ${e.message}"
         return
@@ -34,7 +33,6 @@ orgs.each { orgName ->
 
     repoBranchMap.each { repoName, branches ->
         def jobName = "${orgName}/${repoName}"
-        println "[INFO] Creating job: ${jobName}"
 
         pipelineJob(jobName) {
             definition {
