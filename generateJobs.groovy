@@ -1,37 +1,42 @@
 import groovy.json.JsonSlurper
+
 def jsonSlurper = new JsonSlurper()
 
-def orgs = ["org1", "org2", "org3"]
-//def baseGitUrl = 'https://github.com'
-//def credentialsId = 'github-token'
-//def scriptPath = 'Jenkinsfile'
-//def maxBranchesToKeep = 20
+// Load config from workspace
+def configText = readFileFromWorkspace('config.json')
+def config = jsonSlurper.parseText(configText)
+
+def orgs = ["SrehaS-protean", "org2", "org3"]
+
 orgs.each { orgName ->
-    def repoFile = new File("${orgName}.json")
-    if (!repoFile.exists()) {
-        println "[WARN] JSON file for ${orgName} not found. Skipping..."
-        return
-    }
-
-    def repoList
-    try {
-        repoList = jsonSlurper.parse(repoFile)
-    } catch (Exception e) {
-        println "[ERROR] Failed to parse ${orgName}.json: ${e.message}"
-        return
-    }
-
     folder(orgName) {
         displayName(orgName)
         description("Folder for ${orgName} repositories")
     }
 
+    def jsonFileName = "${orgName}.json"
+    def repoJsonText
+    try {
+        repoJsonText = readFileFromWorkspace(jsonFileName)
+    } catch (Exception e) {
+        println "[WARN] JSON file '${jsonFileName}' not found in workspace. Skipping ${orgName}..."
+        return
+    }
+
+    def repoList
+    try {
+        repoList = jsonSlurper.parseText(repoJsonText)
+    } catch (Exception e) {
+        println "[ERROR] Failed to parse '${jsonFileName}': ${e.message}"
+        return
+    }
+
     repoList.each { repoName ->
         def jobName = "${orgName}/${repoName}"
-        println "[INFO] Checking if job '${jobName}' already exists..."
+        println "[INFO] Processing job: ${jobName}"
 
         if (Jenkins.instance.getItemByFullName(jobName) == null) {
-            println "[CREATE] Creating new job: ${jobName}"
+            println "[CREATE] Creating job: ${jobName}"
 
             multibranchPipelineJob(jobName) {
                 branchSources {
@@ -39,25 +44,25 @@ orgs.each { orgName ->
                         source {
                             git {
                                 id("${orgName}-${repoName}")
-                                remote("${baseGitUrl}/${orgName}/${repoName}.git")
-                                credentialsId(credentialsId)
+                                remote("${config.baseGitUrl}/${orgName}/${repoName}.git")
+                                credentialsId(config.credentialsId)
                             }
                         }
                     }
                 }
                 factory {
                     workflowBranchProjectFactory {
-                        scriptPath(scriptPath)
+                        scriptPath(config.scriptPath)
                     }
                 }
                 orphanedItemStrategy {
                     discardOldItems {
-                        numToKeep(maxBranchesToKeep)
+                        numToKeep(config.maxBranchesToKeep)
                     }
                 }
             }
         } else {
-            println "[SKIP] Job '${jobName}' already exists. Skipping creation."
+            println "[SKIP] Job '${jobName}' already exists."
         }
     }
 }
