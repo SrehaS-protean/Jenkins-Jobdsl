@@ -1,5 +1,5 @@
-[
-  "repo1",
-  "repo2",
-  "repo3"
-]
+{
+  "repo1": ["main", "develop", "release"],
+  "repo2": ["main"],
+  "repo3": ["feature-x", "hotfix"]
+}
