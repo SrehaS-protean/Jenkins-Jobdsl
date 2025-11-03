@@ -2,11 +2,11 @@ import groovy.json.JsonSlurper
 
 def jsonSlurper = new JsonSlurper()
 
-// Load config from workspace
+// Load global config
 def configText = readFileFromWorkspace('config.json')
 def config = jsonSlurper.parseText(configText)
 
-def orgs = ["SrehaS-protean", "org2", "org3"]
+def orgs = ["org1", "org2", "org3"]
 
 orgs.each { orgName ->
     folder(orgName) {
@@ -16,6 +16,7 @@ orgs.each { orgName ->
 
     def jsonFileName = "${orgName}.json"
     def repoJsonText
+
     try {
         repoJsonText = readFileFromWorkspace(jsonFileName)
     } catch (Exception e) {
@@ -23,46 +24,41 @@ orgs.each { orgName ->
         return
     }
 
-    def repoList
+    def repoBranchMap
     try {
-        repoList = jsonSlurper.parseText(repoJsonText)
+        repoBranchMap = jsonSlurper.parseText(repoJsonText)
     } catch (Exception e) {
         println "[ERROR] Failed to parse '${jsonFileName}': ${e.message}"
         return
     }
 
-    repoList.each { repoName ->
+    repoBranchMap.each { repoName, branches ->
         def jobName = "${orgName}/${repoName}"
-        println "[INFO] Processing job: ${jobName}"
+        println "[INFO] Creating job: ${jobName}"
 
-        if (Jenkins.instance.getItemByFullName(jobName) == null) {
-            println "[CREATE] Creating job: ${jobName}"
-
-            multibranchPipelineJob(jobName) {
-                branchSources {
-                    branchSource {
-                        source {
-                            git {
-                                id("${orgName}-${repoName}")
-                                remote("${config.baseGitUrl}/${orgName}/${repoName}.git")
-                                credentialsId(config.credentialsId)
+        pipelineJob(jobName) {
+            definition {
+                cpsScm {
+                    scm {
+                        git {
+                            remote {
+                                url("${config.baseGitUrl}/${orgName}/${repoName}.git")
+                                credentials(config.credentialsId)
                             }
+                            branch('${BRANCH}')
                         }
                     }
-                }
-                factory {
-                    workflowBranchProjectFactory {
-                        scriptPath(config.scriptPath)
-                    }
-                }
-                orphanedItemStrategy {
-                    discardOldItems {
-                        numToKeep(config.maxBranchesToKeep)
-                    }
+                    scriptPath(config.scriptPath)
                 }
             }
-        } else {
-            println "[SKIP] Job '${jobName}' already exists."
+
+            parameters {
+                choiceParam('BRANCH', branches, 'Select the branch to build')
+            }
+
+            logRotator {
+                numToKeep(config.maxBuildsToKeep ?: 20)
+            }
         }
     }
 }
