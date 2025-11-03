@@ -1,0 +1,6 @@
+{
+  "baseGitUrl": "https://github.com",
+  "credentialsId": "github-token",
+  "scriptPath": "Jenkinsfile",
+  "maxBranchesToKeep": 20
+}
